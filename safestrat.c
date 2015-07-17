@@ -11,6 +11,8 @@
 void *IOHIDEventCreateKeyboardEvent(CFAllocatorRef, uint64_t, uint32_t, uint32_t,
                                     bool, uint32_t);
 void *IOHIDEventSystemCreate(CFAllocatorRef);
+bool IOHIDEventSystemOpen(void *, void *, void*, void*, void*);
+void IOHIDEventSystemClose(void *, void*);
 void *IOHIDEventSystemCopyEvent(void *, uint32_t, void *, uint32_t);
 
 CFIndex IOHIDEventGetIntegerValue(void *, uint32_t);
@@ -28,17 +30,17 @@ typedef struct __IOUSBDeviceController* IOUSBDeviceControllerRef;
 typedef struct __IOUSBDeviceDescription* IOUSBDeviceDescriptionRef;
 IOReturn IOUSBDeviceControllerCreate(CFAllocatorRef allocator,
                                      IOUSBDeviceControllerRef* deviceRef);
-IOUSBDeviceDescriptionRef IOUSBDeviceDescriptionCreateWithType(CFAllocatorRef al, 
+IOUSBDeviceDescriptionRef IOUSBDeviceDescriptionCreateWithType(CFAllocatorRef al,
                                                                CFStringRef type);
 void IOUSBDeviceDescriptionSetSerialString(IOUSBDeviceDescriptionRef ref,
                                            CFStringRef serial);
-IOReturn IOUSBDeviceControllerSetDescription(IOUSBDeviceControllerRef device, 
+IOReturn IOUSBDeviceControllerSetDescription(IOUSBDeviceControllerRef device,
                                              IOUSBDeviceDescriptionRef description);
 
 static void enable_usb() {
     IOUSBDeviceDescriptionRef descr =
-        IOUSBDeviceDescriptionCreateWithType(kCFAllocatorDefault,
-                                             CFSTR("standardMuxOnly"));
+    IOUSBDeviceDescriptionCreateWithType(kCFAllocatorDefault,
+                                         CFSTR("standardMuxOnly"));
     if (!descr) {
         printf("IOUSBDeviceDescriptionCreateWithType failed :(\n");
         exit(1);
@@ -58,10 +60,15 @@ static void enable_usb() {
 }
 
 static bool test_volume_down() {
+    bool pressed = false;
     void *event_system = IOHIDEventSystemCreate(NULL);
     if (!event_system) {
         printf("couldn't create HID event system\n");
-        return false;
+        goto tvd_return;
+    }
+    if (!IOHIDEventSystemOpen(event_system, NULL, NULL, NULL, NULL)) {
+        printf("couldn't open HID event system\n");
+        goto tvd_return;
     }
     /* volume *decrement* */
     void *dummy = IOHIDEventCreateKeyboardEvent(NULL, mach_absolute_time(),
@@ -69,15 +76,18 @@ static bool test_volume_down() {
                                                 0, 0);
     if (!dummy) {
         printf("couldn't create dummy HID event\n");
-        return false;
+        goto tvd_return;
     }
     void *event = IOHIDEventSystemCopyEvent(event_system,
                                             kIOHIDEventTypeKeyboard,
                                             dummy, 0);
     if (!event)
-        return false;
-    CFIndex ival = IOHIDEventGetIntegerValue(event, kIOHIDEventFieldKeyboardDown);
-    return !!ival;
+        goto tvd_return;
+    pressed = !!IOHIDEventGetIntegerValue(event, kIOHIDEventFieldKeyboardDown);
+tvd_return:
+    if (event_system)
+        IOHIDEventSystemClose(event_system, NULL);
+    return pressed;
 }
 
 int main(int argc, char **argv) {
