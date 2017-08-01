@@ -1,6 +1,6 @@
 Package: net.angelxwind.safestrat
 Name: safestrat
-Version: 1.0.2
+Version: 1.0.3
 Description: Volume-down at boot for SSH over USB
 Section: Utilities
 Depends: 
@@ -10,4 +10,4 @@ Architecture: iphoneos-arm
 Author: comex <angelXwind@angelxwind.net>
 Homepage: http://cydia.angelxwind.net/
 Depiction: http://cydia.angelxwind.net/?page/net.angelxwind.safestrat
-Maintainer: Karen Tsai (angelXwind) <angelXwind@angelxwind.net>
+Maintainer: Karen／明美 (angelXwind) <angelXwind@angelxwind.net>
